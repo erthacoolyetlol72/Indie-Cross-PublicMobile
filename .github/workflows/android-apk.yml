@@ -111,6 +111,15 @@ jobs:
             echo "Building a debug test build"
           fi
 
+      - name: Add empty GameJolt keys
+        run: |
+          # source/GJKeys.hx holds private API keys and is not in the repo
+          if [ ! -f source/GJKeys.hx ]; then
+            echo 'package;' > source/GJKeys.hx
+            echo 'class GJKeys { public static var id:Int = 0; public static var key:String = ""; }' >> source/GJKeys.hx
+          fi
+          cat source/GJKeys.hx
+
       - name: Turn the cutscene videos into pictures
         run: |
           # phones have no video player: each video becomes pictures + its sound (see VideoHandler.hx)

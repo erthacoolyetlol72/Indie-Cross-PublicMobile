@@ -582,7 +582,7 @@ class PlayState extends MusicBeatState
 			goods = 0;
 		}
 
-		cannotDie = false;
+		cannotDie = AdminPanelState.godMode; // admin panel test option (normally false)
 
 		PlayStateChangeables.useDownscroll = FlxG.save.data.downscroll;
 		PlayStateChangeables.safeFrames = FlxG.save.data.frames;

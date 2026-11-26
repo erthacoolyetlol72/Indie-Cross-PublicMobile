@@ -13,7 +13,7 @@ import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import flixel.util.FlxColor;
-#if windows
+#if cpp
 import Discord.DiscordClient;
 #end
 

@@ -267,6 +267,7 @@ class MainMenuState extends MusicBeatState
 	static var curSelected:Int = 0;
 
 	var disableInput:Bool = false;
+	var adminButton:FlxText;
 	var menuPosTweens:Array<FlxTween>;
 	
 	var loginScreen:LoginScreen;
@@ -294,6 +295,13 @@ class MainMenuState extends MusicBeatState
 		#if mobile
 		addVirtualPad(UP_DOWN, A_B);
 		#end
+
+		// testing panel (tap here, or F2 on PC)
+		adminButton = new FlxText(12, 10, 0, 'ADMIN', 30);
+		adminButton.setFormat(null, 30, FlxColor.YELLOW, LEFT, OUTLINE, FlxColor.BLACK);
+		adminButton.borderSize = 2;
+		adminButton.scrollFactor.set();
+		adminButton.alpha = 0.8;
 
 		#if debug
 		debugTools = true;
@@ -482,6 +490,17 @@ class MainMenuState extends MusicBeatState
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
+
+		if (adminButton != null && !disableInput && members.indexOf(adminButton) == -1)
+			add(adminButton); // added last so it is drawn above the menu
+
+		if (adminButton != null && !disableInput
+			&& (FlxG.keys.justPressed.F2 || (FlxG.mouse.justPressed && FlxG.mouse.overlaps(adminButton))))
+		{
+			disableInput = true;
+			Main.switchState(new AdminPanelState());
+			return;
+		}
 
 		if ((!FlxG.sound.music.playing && videoDone) && !disableInput)
 		{
