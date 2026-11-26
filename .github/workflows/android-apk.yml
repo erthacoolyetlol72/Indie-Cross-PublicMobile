@@ -114,27 +114,30 @@ jobs:
       - name: Turn the cutscene videos into pictures
         run: |
           # phones have no video player: each video becomes pictures + its sound (see VideoHandler.hx)
+          set +e
           FPS=15
           WIDTH=640
-          total_frames=0
           find assets/videos -name '*.mp4' -print0 | sort -z | while IFS= read -r -d '' f; do
             name="${f#assets/videos/}"
             name="${name%.mp4}"
             out="assets/videoframes/$name"
             mkdir -p "$out"
-            ffmpeg -loglevel error -i "$f" -vf "fps=$FPS,scale=$WIDTH:-2" -q:v 5 "$out/f%04d.jpg"
+            ffmpeg -nostdin -loglevel error -i "$f" -vf "fps=$FPS,scale=$WIDTH:-2" -q:v 5 "$out/f%04d.jpg"
             frames=$(ls "$out" | grep -c '\.jpg$')
+            if [ "$frames" -eq 0 ]; then echo "::warning::No pictures made for $f"; fi
             size=$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "$f")
             w="${size%x*}"; h="${size#*x}"
             audio=0
             if [ -n "$(ffprobe -v error -select_streams a -show_entries stream=index -of csv=p=0 "$f")" ]; then
-              ffmpeg -loglevel error -i "$f" -vn -c:a libvorbis -q:a 4 "$out/audio.ogg" && audio=1
+              ffmpeg -nostdin -loglevel error -i "$f" -vn -c:a libvorbis -q:a 4 "$out/audio.ogg" && audio=1
             fi
             echo "$FPS $frames $w $h $audio" > "$out/info.txt"
             dur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$f")
             echo "$name: ${dur}s ${w}x${h} -> $frames pictures, sound=$audio, $(du -sh "$out" | cut -f1)"
           done
-          echo "All cutscene pictures: $(find assets/videoframes -type f | wc -l) files, $(du -sh assets/videoframes | cut -f1)"
+          summary="All cutscene pictures: $(find assets/videoframes -type f | wc -l) files, $(du -sh assets/videoframes | cut -f1)"
+          echo "$summary"
+          echo "::notice::$summary"
 
       - name: Compile
         env:
