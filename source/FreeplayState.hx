@@ -1,5 +1,9 @@
 package;
 
+#if mobile
+import android.flixel.FlxVirtualPad;
+#end
+
 import offsetMenus.IconOffsets;
 import GameJolt.GameJoltInfo;
 import Shaders.FXHandler;
@@ -97,6 +101,10 @@ class FreeplayState extends MusicBeatState
 	override function create()
 	{
 		super.create();
+
+		#if mobile
+		addVirtualPad(LEFT_FULL, A_B);
+		#end
 
 		persistentUpdate = true;
 

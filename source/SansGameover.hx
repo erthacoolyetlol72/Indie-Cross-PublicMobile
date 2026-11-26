@@ -1,5 +1,9 @@
 package;
 
+#if mobile
+import android.flixel.FlxVirtualPad;
+#end
+
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.system.FlxSound;
@@ -35,6 +39,10 @@ class SansGameover extends MusicBeatSubstate
 	public function new()
 	{
 		super();
+
+		#if mobile
+		addVirtualPad(NONE, A_B);
+		#end
 
 		FlxG.mouse.visible = true;
 

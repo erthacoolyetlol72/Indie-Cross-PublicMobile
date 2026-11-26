@@ -1,5 +1,9 @@
 package;
 
+#if mobile
+import android.flixel.FlxVirtualPad;
+#end
+
 import flixel.util.FlxColor;
 import flixel.FlxG;
 import flixel.FlxSprite;
@@ -124,6 +128,10 @@ class StoryMenuState extends MusicBeatState
 	override function create()
 	{
 		super.create();
+
+		#if mobile
+		addVirtualPad(LEFT_FULL, A_B);
+		#end
 
 		persistentUpdate = true;
 

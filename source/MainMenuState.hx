@@ -1,6 +1,10 @@
 
 package;
 
+#if mobile
+import android.flixel.FlxVirtualPad;
+#end
+
 import offsetMenus.DiffButtonOffsets;
 #if desktop
 import sys.io.File;
@@ -286,6 +290,10 @@ class MainMenuState extends MusicBeatState
 	override public function create()
 	{
 		super.create();
+
+		#if mobile
+		addVirtualPad(UP_DOWN, A_B);
+		#end
 
 		#if debug
 		debugTools = true;

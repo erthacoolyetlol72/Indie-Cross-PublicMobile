@@ -1,5 +1,9 @@
 package;
 
+#if mobile
+import android.flixel.FlxVirtualPad;
+#end
+
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.text.FlxText;
@@ -18,6 +22,10 @@ class InspectReward extends MusicBeatSubstate
 	public function new()
 	{
 		super();
+
+		#if mobile
+		addVirtualPad(NONE, B);
+		#end
 		FlxG.mouse.visible = true;
 
 		var bg:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);

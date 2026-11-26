@@ -1,5 +1,9 @@
 package;
 
+#if mobile
+import android.flixel.FlxVirtualPad;
+#end
+
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.group.FlxGroup;
@@ -52,6 +56,10 @@ class GameOverCuphead extends MusicBeatSubstate
 	public function new(time:Float = 0, totalTime:Float = 0)
 	{
 		super();
+
+		#if mobile
+		addVirtualPad(UP_DOWN, A);
+		#end
 
 		trace('curtime is: ' + time + ' totaltime is: ' + totalTime);
 

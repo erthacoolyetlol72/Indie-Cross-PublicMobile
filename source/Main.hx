@@ -102,6 +102,11 @@ class Main extends Sprite
 		var stageWidth:Int = Lib.current.stage.stageWidth;
 		var stageHeight:Int = Lib.current.stage.stageHeight;
 
+		#if mobile
+		// phones: keep the 1280x720 game Indie Cross is made for, scaled to fit the screen
+		zoom = 1;
+		#end
+
 		if (zoom == -1)
 		{
 			var ratioX:Float = stageWidth / gameWidth;
@@ -137,6 +142,10 @@ class Main extends Sprite
 		FlxG.console.registerObject("PlayStateChangeables", PlayStateChangeables);
 
 		FlxG.console.registerObject("MainMenuState", MainMenuState);
+		#end
+
+		#if mobile
+		android.TouchKeys.init();
 		#end
 
 		Application.current.window.onFocusOut.add(onWindowFocusOut);
@@ -305,7 +314,11 @@ class Main extends Sprite
 		dateNow = StringTools.replace(dateNow, " ", "_");
 		dateNow = StringTools.replace(dateNow, ":", "'");
 
-		path = "./crash/" + "IndieCross_" + dateNow + ".txt";
+		var crashDir:String = "./crash/";
+		#if mobile
+		crashDir = lime.system.System.applicationStorageDirectory + "crash/";
+		#end
+		path = crashDir + "IndieCross_" + dateNow + ".txt";
 
 		errMsg = "Version: " + Lib.application.meta["version"] + "\n";
 
@@ -322,10 +335,17 @@ class Main extends Sprite
 
 		errMsg += "\nUncaught Error: " + e.error + "\nReport the error here: https://discord.gg/cZydhxFYpp";
 
-		if (!FileSystem.exists("./crash/"))
-			FileSystem.createDirectory("./crash/");
+		try
+		{
+			if (!FileSystem.exists(crashDir))
+				FileSystem.createDirectory(crashDir);
 
-		File.saveContent(path, errMsg + "\n");
+			File.saveContent(path, errMsg + "\n");
+		}
+		catch (e:Dynamic)
+		{
+			Sys.println("Could not save the crash dump: " + e);
+		}
 
 		Sys.println(errMsg);
 		Sys.println("Crash dump saved in " + Path.normalize(path));
@@ -336,7 +356,7 @@ class Main extends Sprite
 		crashDialoguePath += ".exe";
 		#end
 
-		if (FileSystem.exists("./" + crashDialoguePath))
+		if (#if mobile false && #end FileSystem.exists("./" + crashDialoguePath))
 		{
 			Sys.println("Found crash dialog: " + crashDialoguePath);
 

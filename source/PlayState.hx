@@ -53,6 +53,11 @@ import openfl.media.Sound;
 import openfl.ui.KeyLocation;
 import openfl.ui.Keyboard;
 import openfl.utils.Assets;
+#if mobile
+import android.TouchKeys;
+import android.flixel.FlxHitbox;
+import openfl.geom.Rectangle;
+#end
 
 using StringTools;
 
@@ -477,6 +482,66 @@ class PlayState extends MusicBeatState
 		dumpAddt = false;
 	}
 
+	#if mobile
+	/** Touch controls: the four note lanes plus this song's dodge / attack buttons. */
+	var mobileHitbox:FlxHitbox;
+	var mobilePauseButton:FlxSprite;
+	var camMobile:FlxCamera;
+
+	/** Which mechanic buttons this song needs (the same songs that show the dodge / attack icons). */
+	function mobileMechanics():HitboxMechanics
+	{
+		if (!mechanicsEnabled)
+			return HitboxMechanics.NONE;
+
+		return switch (SONG.song.toLowerCase())
+		{
+			case 'last-reel' | 'despair': HitboxMechanics.ATTACK_SIDES_DODGE; // Striker comes from the left, Piper from the right
+			case 'sansational' | 'burning-in-hell' | 'knockout' | 'devils-gambit': HitboxMechanics.ATTACK_DODGE;
+			case 'whoopee' | 'bad-time' | 'satanic-funkin' | 'ritual': HitboxMechanics.DODGE;
+			case 'technicolor-tussle': HitboxMechanics.ATTACK;
+			default: HitboxMechanics.NONE;
+		}
+	}
+
+	function createMobileControls():Void
+	{
+		TouchKeys.init();
+
+		camMobile = new FlxCamera();
+		camMobile.bgColor.alpha = 0;
+		FlxG.cameras.add(camMobile, false);
+
+		mobileHitbox = new FlxHitbox(mobileMechanics());
+		mobileHitbox.cameras = [camMobile];
+		add(mobileHitbox);
+
+		// pause button: two white bars on a dark square, top right corner (presses ESCAPE)
+		mobilePauseButton = new FlxSprite(FlxG.width - 105, 10);
+		mobilePauseButton.makeGraphic(95, 95, 0xAA000000, true);
+		mobilePauseButton.pixels.fillRect(new Rectangle(28, 22, 13, 51), 0xFFFFFFFF);
+		mobilePauseButton.pixels.fillRect(new Rectangle(54, 22, 13, 51), 0xFFFFFFFF);
+		mobilePauseButton.dirty = true;
+		mobilePauseButton.scrollFactor.set();
+		mobilePauseButton.cameras = [camMobile];
+		add(mobilePauseButton);
+		TouchKeys.register(mobilePauseButton, TouchKeys.KEY_ESCAPE);
+
+		showMobileControls(false);
+	}
+
+	/** Shows / hides the touch controls (hidden ones do nothing, so menus on top can be tapped). */
+	function showMobileControls(show:Bool):Void
+	{
+		if (mobileHitbox != null)
+			mobileHitbox.visible = show;
+		if (mobilePauseButton != null)
+			mobilePauseButton.visible = show;
+		if (!show)
+			TouchKeys.releaseAll();
+	}
+	#end
+
 	override public function create()
 	{
 		super.create();
@@ -526,10 +591,10 @@ class PlayState extends MusicBeatState
 		// pre lowercasing the song name (create)
 		songLowercase = StringTools.replace(PlayState.SONG.song, " ", "-").toLowerCase();
 
-		#if cpp
+		#if (cpp && !mobile)
 		executeModchart = FileSystem.exists(Paths.lua(songLowercase + "/modchart"));
 		#end
-		#if !cpp
+		#if (!cpp || mobile)
 		executeModchart = false; // FORCE disable for non cpp targets
 		#end
 
@@ -2493,6 +2558,10 @@ class PlayState extends MusicBeatState
 				dodgeHud.alpha = 0.0001;
 		}
 
+		#if mobile
+		createMobileControls();
+		#end
+
 		generateSong(SONG.song);
 
 		origSpeed = SONG.speed;
@@ -3245,7 +3314,7 @@ class PlayState extends MusicBeatState
 			}
 			else
 			{
-				if (FileSystem.exists(Paths.video(cutPrefix + '/' + storyIndex + suffix)))
+				if (AssetCheck.exists(Paths.video(cutPrefix + '/' + storyIndex + suffix)))
 				{
 					camGame.visible = false;
 					camHUD.visible = false;
@@ -3568,7 +3637,7 @@ class PlayState extends MusicBeatState
 	var startTimer:FlxTimer;
 	var perfectMode:Bool = false;
 
-	#if cpp
+	#if (cpp && !mobile)
 	public static var luaModchart:ModchartState = null;
 	#else
 	public static var luaModchart:Dynamic;
@@ -3599,6 +3668,10 @@ class PlayState extends MusicBeatState
 	function startCountdown():Void
 	{
 		bumpRate = 4;
+
+		#if mobile
+		showMobileControls(true);
+		#end
 
 		FlxG.stage.addEventListener(KeyboardEvent.KEY_DOWN, handleInput);
 		FlxG.stage.addEventListener(KeyboardEvent.KEY_UP, releaseInput);
@@ -3643,7 +3716,7 @@ class PlayState extends MusicBeatState
 
 			canPause = false;
 
-			#if cpp
+			#if (cpp && !mobile)
 			// pre lowercasing the song name (startCountdown)
 			if (executeModchart)
 			{
@@ -4874,6 +4947,10 @@ class PlayState extends MusicBeatState
 
 	override function openSubState(SubState:FlxSubState)
 	{
+		#if mobile
+		showMobileControls(false);
+		#end
+
 		if (paused)
 		{
 			if (FlxG.sound.music != null)
@@ -4975,6 +5052,11 @@ class PlayState extends MusicBeatState
 
 	override function closeSubState()
 	{
+		#if mobile
+		if (startedCountdown && !dead)
+			showMobileControls(true);
+		#end
+
 		if (paused && !dead)
 		{
 			FlxTween.globalManager.active = true;
@@ -5291,7 +5373,7 @@ class PlayState extends MusicBeatState
 			mechAnim.alpha = mechInstructions.alpha;
 		}
 
-		if (hasInstruction && controls.ACCEPT && !inCutscene && !videoPlaying)
+		if (hasInstruction && (controls.ACCEPT #if mobile || FlxG.mouse.justPressed #end) && !inCutscene && !videoPlaying)
 		{
 			hasInstruction = false;
 			camGame.visible = true;
@@ -7639,7 +7721,7 @@ class PlayState extends MusicBeatState
 
 		if (isStoryMode && (storyPlaylist.length <= 0 && SONG.song.toLowerCase() != 'sansational'))
 		{
-			if (FileSystem.exists(Paths.video(cutPrefix + '/' + (storyIndex + 1) + suffix)))
+			if (AssetCheck.exists(Paths.video(cutPrefix + '/' + (storyIndex + 1) + suffix)))
 			{
 				camGame.visible = false;
 				camHUD.visible = false;
@@ -7688,6 +7770,10 @@ class PlayState extends MusicBeatState
 
 	function endSong():Void
 	{
+		#if mobile
+		showMobileControls(false);
+		#end
+
 		if (dodgeAmt == 0 && SONG.song.toLowerCase() == 'last-reel' && storyDifficulty == 2)
 		{
 			pushToAchievementIDS("Courage", true);
@@ -12214,6 +12300,7 @@ class PlayState extends MusicBeatState
 
 	function antiCheat()
 	{
+		#if desktop
 		if (!FlxG.fullscreen)
 		{
 			var output = new Process("tasklist", []).stdout.readAll().toString().toLowerCase();
@@ -12231,6 +12318,7 @@ class PlayState extends MusicBeatState
 				}
 			}
 		}
+		#end
 	}
 
 	function getCamOffsets()

@@ -1,5 +1,9 @@
 package;
 
+#if mobile
+import android.flixel.FlxVirtualPad;
+#end
+
 import Shaders.WhiteOverlayShader;
 import flixel.FlxG;
 import flixel.FlxSprite;
@@ -36,6 +40,10 @@ class FreeplaySelect extends MusicBeatState
 	override public function create()
 	{
 		super.create();
+
+		#if mobile
+		addVirtualPad(LEFT_RIGHT, A_B);
+		#end
 
 		persistentUpdate = true;
 

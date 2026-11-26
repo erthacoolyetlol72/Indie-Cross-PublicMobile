@@ -1,5 +1,9 @@
 package;
 
+#if mobile
+import android.flixel.FlxVirtualPad;
+#end
+
 import haxe.ValueException;
 import flixel.FlxG;
 import flixel.FlxObject;
@@ -37,6 +41,10 @@ class GameOverSubstate extends MusicBeatSubstate
 	public function new(x:Float, y:Float)
 	{
 		super();
+
+		#if mobile
+		addVirtualPad(NONE, A_B);
+		#end
 
 		FlxG.mouse.visible = true;
 

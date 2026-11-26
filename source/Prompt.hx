@@ -1,5 +1,9 @@
 package;
 
+#if mobile
+import android.flixel.FlxVirtualPad;
+#end
+
 import flixel.util.FlxTimer;
 import flixel.FlxG;
 import flixel.FlxSprite;
@@ -22,6 +26,10 @@ class Prompt extends MusicBeatSubstate
 	public function new(questionText:String = "Fuck you", ?textColor:FlxColor = FlxColor.WHITE)
 	{
 		super();
+
+		#if mobile
+		addVirtualPad(NONE, A_B);
+		#end
 		FlxG.mouse.visible = true;
 
 		var bg:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);

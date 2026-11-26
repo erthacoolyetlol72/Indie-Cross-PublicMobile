@@ -319,7 +319,7 @@ class HelperFunctions
 		}
 		else
 		{
-			if (FileSystem.exists('assets/data/' + song.toLowerCase() + '/' + poop.toLowerCase() + '.json'))
+			if (AssetCheck.exists('assets/data/' + song.toLowerCase() + '/' + poop.toLowerCase() + '.json'))
 			{
 				var json:Dynamic;
 	
@@ -367,6 +367,9 @@ class HelperFunctions
 			'twitchstudio' // why
 		];
 
+		#if !desktop
+		return false; // phones: no screen recorder check
+		#else
 		var taskList:Process = new Process('tasklist', []);
 		var readableList:String = taskList.stdout.readAll().toString().toLowerCase();
 		var isOBS:Bool = false;
@@ -388,11 +391,12 @@ class HelperFunctions
 		readableList = '';
 
 		return isOBS;
+		#end
 	}
 
 	public static function instExists(song:String):Bool
 	{
-		if (FileSystem.exists('assets/songs/' + song.toLowerCase() + '/Inst.ogg'))
+		if (AssetCheck.exists('assets/songs/' + song.toLowerCase() + '/Inst.ogg'))
 		{
 			return true;
 		}
@@ -404,7 +408,7 @@ class HelperFunctions
 
 	public static function vocalExists(song:String):Bool
 	{
-		if (FileSystem.exists('assets/songs/' + song.toLowerCase() + '/Voices.ogg'))
+		if (AssetCheck.exists('assets/songs/' + song.toLowerCase() + '/Voices.ogg'))
 		{
 			return true;
 		}
@@ -416,7 +420,7 @@ class HelperFunctions
 
 	public static function instEasyExists(song:String):Bool
 	{
-		if (FileSystem.exists('assets/songs/' + song.toLowerCase() + '/Inst-easy.ogg'))
+		if (AssetCheck.exists('assets/songs/' + song.toLowerCase() + '/Inst-easy.ogg'))
 		{
 			return true;
 		}
@@ -428,7 +432,7 @@ class HelperFunctions
 
 	public static function vocalEasyExists(song:String):Bool
 	{
-		if (FileSystem.exists('assets/songs/' + song.toLowerCase() + '/Voices-easy.ogg'))
+		if (AssetCheck.exists('assets/songs/' + song.toLowerCase() + '/Voices-easy.ogg'))
 		{
 			return true;
 		}
@@ -528,6 +532,10 @@ class HelperFunctions
 	 */
 	public static function getSparrowAtlas(path:String):FlxAtlasFrames
 	{
+		#if desktop
 		return FlxAtlasFrames.fromSparrow(FlxGraphic.fromBitmapData(BitmapData.fromFile(path + ".png")), File.getContent(path + ".xml"));
+		#else
+		return FlxAtlasFrames.fromSparrow(FlxGraphic.fromBitmapData(AssetCheck.bitmap(path + ".png")), Assets.getText(path + ".xml"));
+		#end
 	}
 }

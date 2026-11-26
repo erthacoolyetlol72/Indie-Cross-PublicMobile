@@ -1,5 +1,9 @@
 package;
 
+#if mobile
+import android.flixel.FlxVirtualPad;
+#end
+
 import flixel.util.FlxTimer;
 import flixel.input.gamepad.FlxGamepad;
 import flixel.FlxG;
@@ -15,7 +19,9 @@ import flixel.tweens.FlxTween;
 import flixel.util.FlxColor;
 import openfl.display.BitmapData;
 import sys.Http;
+#if desktop
 import sys.io.Process;
+#end
 
 using StringTools;
 
@@ -376,6 +382,10 @@ class CreditsMenu extends MusicBeatState
 	{
 		super.create();
 
+		#if mobile
+		addVirtualPad(NONE, A_B);
+		#end
+
 		persistentUpdate = true;
 
 		FlxG.mouse.visible = true;
@@ -388,13 +398,13 @@ class CreditsMenu extends MusicBeatState
 
 		for (i in 0...credTypes.length)
 		{
-			var bgBitmap:BitmapData = BitmapData.fromFile(Paths.image("credits/bg/" + credTypes[i] + '_BG', "preload"));
+			var bgBitmap:BitmapData = AssetCheck.bitmap(Paths.image("credits/bg/" + credTypes[i] + '_BG', "preload"));
 			bgAssets.push(bgBitmap);
 		}
 
 		for (i in 0...credits.length)
 		{
-			var bigIconAsset:BitmapData = BitmapData.fromFile(Paths.image("credits/icons/big_icons/" + credits[i][0], "preload"));
+			var bigIconAsset:BitmapData = AssetCheck.bitmap(Paths.image("credits/icons/big_icons/" + credits[i][0], "preload"));
 			bigIconsAssets.push(bigIconAsset);
 			//make the small ones use the big ones just resized, saves a bit of loading time(not really)
 
@@ -420,11 +430,11 @@ class CreditsMenu extends MusicBeatState
 
 			credIcons.push(smallIcon);
 
-			//var bigIconAsset:BitmapData = BitmapData.fromFile(Paths.image("credits/icons/big_icons/" + credits[i][0], "preload"));
+			//var bigIconAsset:BitmapData = AssetCheck.bitmap(Paths.image("credits/icons/big_icons/" + credits[i][0], "preload"));
 			//bigIconsAssets.push(bigIconAsset);
 		}
 
-		selctionHighlighter = new FlxSprite(3, 11).loadGraphic(BitmapData.fromFile(Paths.image('credits/icons/selector', 'preload')));
+		selctionHighlighter = new FlxSprite(3, 11).loadGraphic(AssetCheck.bitmap(Paths.image('credits/icons/selector', 'preload')));
 		selctionHighlighter.setGraphicSize(Std.int(selctionHighlighter.width * 0.7));
 		selctionHighlighter.updateHitbox();
 		selctionHighlighter.antialiasing = FlxG.save.data.highquality;

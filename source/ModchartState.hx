@@ -1,6 +1,6 @@
 import flixel.graphics.FlxGraphic;
 import flixel.graphics.frames.FlxAtlasFrames;
-#if cpp
+#if (cpp && !mobile)
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.tweens.FlxEase;

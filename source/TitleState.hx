@@ -272,7 +272,10 @@ class TitleState extends MusicBeatState
 
 	public static function restart()
 	{
-		#if cpp
+		#if mobile
+		// phones cannot relaunch the app: restart the game inside it instead
+		FlxG.resetGame();
+		#elseif cpp
 		var os = Sys.systemName();
 		var args = "Test.hx";
 		var app = "";

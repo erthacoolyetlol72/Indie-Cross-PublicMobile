@@ -51,9 +51,47 @@ class MusicBeatState extends FNFState
 
 	var skippedFrames = 0;
 
+	#if mobile
+	var virtualPad:android.flixel.FlxVirtualPad;
+	var padRequest:Array<Dynamic>;
+
+	/** Asks for an on-screen pad; it is made on the next update, after this screen set up its cameras. */
+	public function addVirtualPad(DPad:android.flixel.FlxVirtualPad.FlxDPadMode, Action:android.flixel.FlxVirtualPad.FlxActionMode)
+	{
+		padRequest = [DPad, Action];
+	}
+
+	public function removeVirtualPad()
+	{
+		padRequest = null;
+		if (virtualPad != null)
+		{
+			remove(virtualPad, true);
+			virtualPad.destroy();
+			virtualPad = null;
+		}
+	}
+
+	function updateVirtualPad()
+	{
+		if (padRequest != null)
+		{
+			var request = padRequest;
+			padRequest = null;
+			if (virtualPad != null)
+				removeVirtualPad();
+			virtualPad = android.MobilePad.create(this, request[0], request[1]);
+		}
+	}
+	#end
+
 	override function update(elapsed:Float)
 	{
 		updateCurStep();
+		#if mobile
+		updateVirtualPad();
+		#end
+
 		updateBeat();
 
 		if (FlxG.save.data.fpsRain && skippedFrames >= 6)

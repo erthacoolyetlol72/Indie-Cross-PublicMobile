@@ -27,7 +27,7 @@ import openfl.net.FileReference;
 
 using StringTools;
 
-#if cpp
+#if (cpp && !mobile)
 import systools.Clipboard;
 #end
 
@@ -83,7 +83,7 @@ class AnimationDebug extends MusicBeatState
 
 		if ((data != null) && (data.length > 0))
 		{
-			#if cpp
+			#if (cpp && !mobile)
 			var leData = data.trim();
 			Clipboard.setText(leData);
 

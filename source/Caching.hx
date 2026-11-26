@@ -82,6 +82,7 @@ class Caching extends MusicBeatState
 		FlxG.mouse.useSystemCursor = true;
 		FlxG.console.autoPause = false;
 		FlxG.autoPause = FlxG.save.data.focusfreeze;
+		#if !mobile
 		switch (FlxG.save.data.resolution)
 		{
 			case 0:
@@ -114,6 +115,7 @@ class Caching extends MusicBeatState
 
 
 		}
+		#end
 
 		GameJoltAPI.connect();
 		GameJoltAPI.authDaUser(FlxG.save.data.gjUser, FlxG.save.data.gjToken);
@@ -121,6 +123,10 @@ class Caching extends MusicBeatState
 		FlxG.worldBounds.set(0, 0);
 
 		FlxG.save.data.optimize = false;
+
+		#if mobile
+		FlxG.save.data.cachestart = false;
+		#end
 
 		if (FlxG.save.data.cachestart)
 		{

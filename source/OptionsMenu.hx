@@ -1,5 +1,9 @@
 package;
 
+#if mobile
+import android.flixel.FlxVirtualPad;
+#end
+
 import animateAtlasPlayer.textures.SubTexture;
 import flixel.math.FlxMath;
 import Options;
@@ -84,6 +88,10 @@ class OptionsMenu extends MusicBeatState
 	override function create()
 	{
 		super.create();
+
+		#if mobile
+		addVirtualPad(LEFT_FULL, A_B);
+		#end
 
 		persistentUpdate = true;
 

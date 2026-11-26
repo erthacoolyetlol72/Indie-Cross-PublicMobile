@@ -1,5 +1,9 @@
 package;
 
+#if mobile
+import android.flixel.FlxVirtualPad;
+#end
+
 import flixel.util.FlxColor;
 import flixel.FlxSprite;
 import flixel.FlxG;
@@ -16,6 +20,10 @@ class JumpscareState extends MusicBeatState
     override function create()
     {
         super.create();
+
+        #if mobile
+        addVirtualPad(NONE, A_B);
+        #end
         
         /*screen = new FlxSprite(0, 0).loadGraphic(Paths.image('bonusSongs/BlackScreen', 'shared'));
         screen.scrollFactor.set(0, 0);

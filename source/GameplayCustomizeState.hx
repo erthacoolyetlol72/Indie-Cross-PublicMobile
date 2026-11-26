@@ -1,3 +1,6 @@
+#if mobile
+import android.flixel.FlxVirtualPad;
+#end
 import flixel.input.gamepad.FlxGamepad;
 import flixel.FlxCamera;
 import flixel.FlxG;
@@ -36,6 +39,10 @@ class GameplayCustomizeState extends MusicBeatState
 	public override function create()
 	{
 		super.create();
+
+		#if mobile
+		addVirtualPad(NONE, B);
+		#end
 
 		#if windows
 		// Updating Discord Rich Presence

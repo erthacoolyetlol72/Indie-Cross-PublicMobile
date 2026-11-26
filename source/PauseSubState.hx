@@ -1,5 +1,9 @@
 package;
 
+#if mobile
+import android.flixel.FlxVirtualPad;
+#end
+
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.effects.FlxFlicker;
@@ -50,6 +54,10 @@ class PauseSubState extends MusicBeatSubstate
 	public function new()
 	{
 		super();
+
+		#if mobile
+		addVirtualPad(UP_DOWN, A_B);
+		#end
 		FlxG.mouse.visible = true;
 		FlxTween.globalManager.active = false;
 

@@ -1,0 +1,170 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+    inputs:
+      final:
+        description: 'Build the FINAL release (no debug, ARM 32+64 bit) instead of a debug test build.'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  buildAndroid:
+    name: Build Android APK
+    runs-on: ubuntu-22.04
+    timeout-minutes: 150
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make room on the build machine
+        run: |
+          # the game is ~1 GB and the APK build copies it twice
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android/sdk/ndk /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost || true
+          # old unused files that are not part of the game
+          rm -rf assets/old
+          df -h .
+
+      - name: Install system packages
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg && (sudo apt-get install -y -qq libncurses5 || true)
+
+      # Done before switching to Java 11: the runner's sdkmanager needs its default Java 17
+      - name: Install Android SDK parts
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "platforms;android-29" "build-tools;30.0.3" > /dev/null
+          ls "$ANDROID_HOME/build-tools" "$ANDROID_HOME/platforms"
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r15c
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: 4.2.5
+
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/haxelib
+            ~/.gradle
+            .hxcpp_cache
+          # a new key every run so the compile cache is saved again each time
+          key: android-build-${{ github.run_id }}
+          restore-keys: android-build-
+
+      - name: Install Haxe libraries
+        run: |
+          haxelib setup ~/haxelib
+          haxelib install hxcpp 4.2.1 --quiet --always
+          haxelib install lime 7.9.0 --quiet --always
+          haxelib install openfl 9.1.0 --quiet --always
+          haxelib install flixel 4.11.0 --quiet --always
+          haxelib install flixel-addons 2.11.0 --quiet --always
+          haxelib install flixel-ui 2.4.0 --quiet --always
+          haxelib install actuate --quiet --always
+          if [ ! -d ~/haxelib/tentools ]; then haxelib git tentools https://github.com/TentaRJ/tentools --quiet --always; fi
+          # installing the libraries above can pull newer lime/hxcpp, so pin them back
+          haxelib set hxcpp 4.2.1 --always
+          haxelib set lime 7.9.0 --always
+          haxelib set openfl 9.1.0 --always
+          haxelib set flixel 4.11.0 --always
+          haxelib set flixel-addons 2.11.0 --always
+          haxelib set flixel-ui 2.4.0 --always
+          haxelib list
+
+      - name: Setup Lime for Android
+        run: |
+          haxelib run lime config ANDROID_SDK $ANDROID_HOME
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_HOME
+          haxelib run lime config JAVA_HOME $JAVA_HOME
+          haxelib run lime config ANDROID_SETUP true
+          # JCenter is shut down; Lime 7.9's Gradle templates still point at it
+          grep -rl "jcenter()" ~/haxelib/lime --include=*.gradle | xargs -r sed -i 's/jcenter()/mavenCentral()/g'
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+
+      - name: Decide build type
+        run: |
+          # a commit message containing [final] (or the manual "final" option) builds the final release
+          if [[ "${{ github.event.head_commit.message }}" == *"[final]"* || "${{ github.event.inputs.final }}" == "true" ]]; then
+            echo "FINAL=1" >> "$GITHUB_ENV"
+            echo "Building the FINAL release"
+          else
+            echo "FINAL=0" >> "$GITHUB_ENV"
+            echo "Building a debug test build"
+          fi
+
+      - name: Turn the cutscene videos into pictures
+        run: |
+          # phones have no video player: each video becomes pictures + its sound (see VideoHandler.hx)
+          FPS=15
+          WIDTH=640
+          total_frames=0
+          find assets/videos -name '*.mp4' -print0 | sort -z | while IFS= read -r -d '' f; do
+            name="${f#assets/videos/}"
+            name="${name%.mp4}"
+            out="assets/videoframes/$name"
+            mkdir -p "$out"
+            ffmpeg -loglevel error -i "$f" -vf "fps=$FPS,scale=$WIDTH:-2" -q:v 5 "$out/f%04d.jpg"
+            frames=$(ls "$out" | grep -c '\.jpg$')
+            size=$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "$f")
+            w="${size%x*}"; h="${size#*x}"
+            audio=0
+            if [ -n "$(ffprobe -v error -select_streams a -show_entries stream=index -of csv=p=0 "$f")" ]; then
+              ffmpeg -loglevel error -i "$f" -vn -c:a libvorbis -q:a 4 "$out/audio.ogg" && audio=1
+            fi
+            echo "$FPS $frames $w $h $audio" > "$out/info.txt"
+            dur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$f")
+            echo "$name: ${dur}s ${w}x${h} -> $frames pictures, sound=$audio, $(du -sh "$out" | cut -f1)"
+          done
+          echo "All cutscene pictures: $(find assets/videoframes -type f | wc -l) files, $(du -sh assets/videoframes | cut -f1)"
+
+      - name: Compile
+        env:
+          # hxcpp reuses compiled files from this folder, so only changed code is recompiled
+          HXCPP_COMPILE_CACHE: ${{ github.workspace }}/.hxcpp_cache
+        run: |
+          set +e
+          if [ "$FINAL" = "1" ]; then
+            ARCHS="-armv7 -arm64"
+            FLAGS="-D NO_PRECOMPILED_HEADERS"
+          else
+            # debug test build: crash traces on, Flixel debugger overlay off
+            ARCHS="-arm64"
+            FLAGS="-debug -D NO_PRECOMPILED_HEADERS -D HXCPP_CHECK_POINTER -D FLX_NO_DEBUG"
+          fi
+          echo "Building for: $ARCHS with: $FLAGS"
+          haxelib run lime build android $ARCHS $FLAGS 2>&1 | tee build.log
+          code=${PIPESTATUS[0]}
+          if [ $code -ne 0 ]; then
+            ERRS=$(grep -n -E "error:|Error:|undefined reference|ld: |\*\*\*|FAILED|Exception|cannot find|No such file|what went wrong" build.log | grep -v -i "warning" | head -12 | cut -c1-300 | tr '\n' '|')
+            TAILS=$(tail -n 15 build.log | cut -c1-250 | tr '\n' '|')
+            echo "::error::ERRORS ${ERRS} TAIL ${TAILS}"
+          fi
+          df -h .
+          exit $code
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: IndieCross-Android
+          path: export/*/android/bin/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+          compression-level: 0

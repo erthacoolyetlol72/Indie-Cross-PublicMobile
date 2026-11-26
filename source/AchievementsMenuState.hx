@@ -1,5 +1,9 @@
 package;
 
+#if mobile
+import android.flixel.FlxVirtualPad;
+#end
+
 import flixel.util.FlxTimer;
 import Discord.DiscordClient;
 import flixel.FlxG;
@@ -32,6 +36,10 @@ class AchievementsMenuState extends MusicBeatState
 	override function create()
 	{
 		super.create();
+
+		#if mobile
+		addVirtualPad(UP_DOWN, B);
+		#end
 
 		persistentUpdate = true;
 

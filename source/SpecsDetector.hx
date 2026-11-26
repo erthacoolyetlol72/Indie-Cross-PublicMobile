@@ -29,6 +29,10 @@ class SpecsDetector extends FlxState
 
 	function checkSpecs():Bool
 	{
+		#if mobile
+		return false; // phones: never pre-load every picture into memory at start
+		#end
+
 		var cpu:Bool = Capabilities.supports64BitProcesses; // too lazy for changing this
 		var ram:UInt64 = obtainRAM();
 
